@@ -1,0 +1,45 @@
+plugins {
+    id 'java'
+    id "com.github.davidmc24.gradle.plugin.avro" version "1.0.0"
+}
+
+group 'com.tauliatrade'
+version '1.0-SNAPSHOT'
+
+repositories {
+    gradlePluginPortal()
+    mavenCentral()
+    maven {
+        url 'https://packages.confluent.io/maven/'
+    }
+}
+
+configurations {
+    cucumberRuntime {
+        extendsFrom testImplementation
+    }
+}
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.20'
+    annotationProcessor 'org.projectlombok:lombok:1.18.20'
+
+    implementation "org.apache.avro:avro:1.10.2"
+
+    implementation 'org.slf4j:slf4j-api:1.7.30'
+    implementation 'org.slf4j:slf4j-log4j12:1.7.30'
+
+    implementation group: 'io.confluent', name: 'kafka-streams-avro-serde', version: '5.2.1'
+    implementation group: 'org.apache.kafka', name: 'kafka-streams', version: '2.8.0'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+
+    testImplementation 'io.cucumber:cucumber-java:6.10.3'
+
+
+}
+
+test {
+    useJUnitPlatform()
+}
