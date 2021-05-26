@@ -1,26 +1,37 @@
 package com.tauliatrade.bank;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Investor {
 
     private String id;
     private String name;
     private Long limit;
-    @JsonIgnore
-    private boolean first = true;
+    @Builder.Default
+    private Long invested = 0L;
+    @Builder.Default
+    private InvestorState state = InvestorState.CREATED;
 
-    public void calculateLimit(Long limit, Long amount) {
-        if (first) {
-            this.limit = limit;
-            this.first = false;
+    public void calculateLimit(BankBalanceApp.JoinedInvestorSecurityCreationRequest investorSecurityCreationRequest) {
+        if (state == InvestorState.CREATED) {
+            this.limit = investorSecurityCreationRequest.getInvestor().getLimit();
+            this.state = InvestorState.AGGREGATED;
         }
-        this.limit = this.limit - amount;
+        if(investorSecurityCreationRequest.getInvestor().getState() == InvestorState.UPDATE) {
+            this.limit = investorSecurityCreationRequest.getInvestor().getLimit() - invested;
+        }
+        this.invested += investorSecurityCreationRequest.getSecurityCreationRequest().getAmount();
+        this.limit -= investorSecurityCreationRequest.getSecurityCreationRequest().getAmount();
+    }
+
+    public enum InvestorState {
+        CREATED, UPDATE, AGGREGATED
     }
 }
