@@ -37,7 +37,9 @@ dependencies {
 
     testImplementation 'io.cucumber:cucumber-java:6.10.3'
 
-
+    implementation "org.testcontainers:kafka:1.15.3"
+    implementation "org.testcontainers:testcontainers:1.15.3"
+    testImplementation group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
 }
 
 test {

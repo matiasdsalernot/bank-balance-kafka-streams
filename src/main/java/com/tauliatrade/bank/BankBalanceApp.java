@@ -17,6 +17,8 @@ public class BankBalanceApp {
         final Properties streamsProperties = createStreamsProperties();
         final StreamsBuilder streamsBuilder = new StreamsBuilder();
 
+
+
         streamsBuilder.stream("security-creation-request")
                 /* Stream processing here */
                 .to("investor-limits");
