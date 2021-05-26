@@ -18,8 +18,18 @@ import java.util.Properties;
 
 public class BankBalanceApp {
 
+    public static final String SECURITY_CREATION_REQUEST_TOPIC = "security-creation-request-topic";
+    public static final String INVESTORS_TOPIC = "investors-topic";
+    public static final String INVESTORS_LOG_TOPIC = "investors-log-topic";
+    public static final String INVESTOR_LIMITS_TOPIC = "investor-limits-topic";
+    private final String bootstrapServers;
+
+    public BankBalanceApp(String bootstrapServers) {
+        this.bootstrapServers = bootstrapServers;
+    }
+
     public static void main(String[] args) {
-        final BankBalanceApp bankBalanceApp = new BankBalanceApp();
+        final BankBalanceApp bankBalanceApp = new BankBalanceApp("localhost:9092");
         bankBalanceApp.run();
     }
 
@@ -28,16 +38,17 @@ public class BankBalanceApp {
         final StreamsBuilder streamsBuilder = new StreamsBuilder();
 
         final JsonSerde<Investor> investorJsonSerde = new JsonSerde<>(Investor.class);
-        final KTable<String, Investor> investors = streamsBuilder.table("investors-topic", Consumed.with(Serdes.String(), investorJsonSerde));
-        investors.toStream().to("investors-log-topic", Produced.with(Serdes.String(), investorJsonSerde));
+        final KTable<String, Investor> investors = streamsBuilder.table(INVESTORS_TOPIC, Consumed.with(Serdes.String(), investorJsonSerde));
+        investors.toStream().to(INVESTORS_LOG_TOPIC, Produced.with(Serdes.String(), investorJsonSerde));
+
         final JsonSerde<SecurityCreationRequest> valueSerde = new JsonSerde<>(SecurityCreationRequest.class);
-        streamsBuilder.stream("security-creation-request-topic", Consumed.with(Serdes.String(), valueSerde))
+        streamsBuilder.stream(SECURITY_CREATION_REQUEST_TOPIC, Consumed.with(Serdes.String(), valueSerde))
                 .selectKey((key, value) -> value.getInvestorId())
                 .join(investors, JoinedInvestorSecurityCreationRequest::new)
                 .groupByKey()
                 .aggregate(Investor::new, (key, value, aggregate) -> calculateNewInvestorLimit(value, aggregate), Materialized.with(Serdes.String(), investorJsonSerde))
                 .toStream()
-                .to("investor-limits-topic", Produced.with(Serdes.String(), investorJsonSerde));
+                .to(INVESTOR_LIMITS_TOPIC, Produced.with(Serdes.String(), investorJsonSerde));
 
         final KafkaStreams kafkaStreams = new KafkaStreams(streamsBuilder.build(), streamsProperties);
 
@@ -56,7 +67,7 @@ public class BankBalanceApp {
     private Properties createStreamsProperties() {
         Properties properties = new Properties();
         properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "investor-limits-streams");
-        properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, this.bootstrapServers);
         properties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         properties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
