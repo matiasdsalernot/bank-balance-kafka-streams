@@ -17,9 +17,9 @@ public class BankBalanceApp {
         final Properties streamsProperties = createStreamsProperties();
         final StreamsBuilder streamsBuilder = new StreamsBuilder();
 
-        streamsBuilder.stream("security-creation-request")
+        streamsBuilder.stream("bank-transactions")
                 /* Stream processing here */
-                .to("investor-limits");
+                .to("bank-balances");
 
         final KafkaStreams kafkaStreams = new KafkaStreams(streamsBuilder.build(), streamsProperties);
 
